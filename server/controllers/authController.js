@@ -1,5 +1,5 @@
 const User = require("../Models/user");
-const hashPass  = require("../service/hashPass");
+const hashPass = require("../service/hashPass");
 const { setUser } = require("../service/authService");
 const bcrypt = require("bcryptjs");
 const AppError = require("../utils/appError");
@@ -58,7 +58,7 @@ const handleLogin = async (req, res, next) => {
     }
 
     const isEmail = emailRegex.test(identifier);
-    const user = isEmail? await User.findOne({ email: identifier }) : await User.findOne({username: identifier});
+    const user = isEmail ? await User.findOne({ email: identifier }) : await User.findOne({ username: identifier });
 
     if (!user) {
       throw new AppError("incorrect email/username or password", 401);
@@ -78,10 +78,26 @@ const handleLogin = async (req, res, next) => {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(200).json({ message: 'Login successful', username: user.username})
+    res.status(200).json({ message: 'Login successful', username: user.username })
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { handleLogin, handleRegister };
+const handleLogout = async (req, res, next) => {
+  try {
+    res.clearCookie("uid", {
+      httpOnly: true,
+      sameSite: 'strict',
+      // secure: process.env.NODE_ENV === 'production',
+
+
+    })
+    res.status(200).json({ message: 'Logged out' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+module.exports = { handleLogin, handleRegister, handleLogout };

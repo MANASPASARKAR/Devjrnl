@@ -1,18 +1,33 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard"
+import Logs from "./pages/Logs";
+import CreateLog from "./pages/CreateLog"
+import Navbar from "./components/Navbar";
 
-function App() {
+function AppLayout() {
+  const location = useLocation();
+  const hideNav = ['/login', '/register'].includes(location.pathname);
 
-  return (  
-    <BrowserRouter>
+  return (
+    <>
+      {!hideNav && <Navbar />}
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        
+        <Route path="/logs" element={<Logs />} />
+        <Route path="/createlog" element={<CreateLog />} />
       </Routes>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppLayout />
     </BrowserRouter>
   )
 }
