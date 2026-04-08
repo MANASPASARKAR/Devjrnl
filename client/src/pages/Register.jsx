@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import ErrorAlert from "../components/ErrorAlert"
@@ -12,6 +12,12 @@ export default function Register() {
     let [name, setName] = useState("");
     let [password, setPassword] = useState("");
     let [confirmPass, setConfirmPass] = useState("");
+    const [time, setTime] = useState(new Date().toLocaleTimeString('en-GB'));
+
+    useEffect(() => {
+        const tick = setInterval(() => setTime(new Date().toLocaleTimeString('en-GB')), 1000);
+        return () => clearInterval(tick);
+    }, []);
 
     const handleSubmit = async (evt) => {
         setError("");
@@ -199,7 +205,7 @@ export default function Register() {
 
                 {/* Status bar */}
                 <div className="mt-4 flex justify-between text-[9px] font-mono text-[#C0CAAF] opacity-30">
-                    <span>LOCAL_TIME: {new Date().toLocaleTimeString('en-GB')}</span>
+                    <span>LOCAL_TIME: {time}</span>
                     <span>SYSTEM_STATUS: OPERATIONAL_</span>
                 </div>
 
