@@ -40,7 +40,7 @@ export default function Navbar() {
                                 relative px-5 h-12 text-[11px] tracking-[0.2em] uppercase transition-all
                                 ${isActive
                                     ? 'text-[#A8FF3E] underline underline-offset-12 decoration-[#A8FF3E]'
-                                    : 'text-[#C0CAAF] opacity-60 hover:opacity-100 hover:text-[#A8FF3E] hover:border-l-2 hover:border-[#A8FF3E]'
+                                    : 'text-[#C0CAAF] opacity-60 hover:opacity-100 hover:text-[#A8FF3E] hover:underline hover:underline-offset-12 hover:decoration-[#A8FF3E]'
                                 }
                             `}
                         >
@@ -53,7 +53,7 @@ export default function Navbar() {
             {/* Right: Logout */}
             <button
                 onClick={SignOut}
-                className="text-[#C0CAAF] text-[11px] tracking-[0.2em] uppercase opacity-60 hover:opacity-100 hover:text-[#A8FF3E] hover:border-l-2 hover:border-[#A8FF3E] h-12 px-3 transition-all"
+                className="text-[#C0CAAF] text-[11px] tracking-[0.2em] uppercase opacity-60 hover:opacity-100 hover:text-[#A8FF3E] hover:underline hover:underline-offset-12 hover:decoration-[#A8FF3E] h-12 px-3 transition-all"
             >
                 LOGOUT
             </button>

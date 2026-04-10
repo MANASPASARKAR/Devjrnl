@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard"
 import Logs from "./pages/Logs";
 import CreateLog from "./pages/CreateLog"
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 function AppLayout() {
   const location = useLocation();
@@ -20,6 +21,7 @@ function AppLayout() {
         <Route path="/logs" element={<Logs />} />
         <Route path="/createlog" element={<CreateLog />} />
       </Routes>
+      <Footer />
     </>
   )
 }
