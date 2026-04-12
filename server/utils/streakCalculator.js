@@ -5,7 +5,7 @@ module.exports.streakCalculator = async (id) => {
     let streak = 0;
     let d = new Date().toISOString().split('T')[0];
 
-    let logDates = logs.map(log => log.date);
+    let logDates = logs.map(log => new Date(log.date).toISOString().split('T')[0]);
     const dateSet = new Set(logDates);
 
     let gap = false;

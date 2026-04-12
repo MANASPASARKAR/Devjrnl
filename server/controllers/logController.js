@@ -31,12 +31,12 @@ const createLog = async (req, res, next) => {
         //     }
         // }
 
-        const newLog = new Log({ content, tags, date: new Date().toISOString().split('T')[0], userId: req.user._id });
+        const newLog = new Log({ content, tags, date: new Date(), userId: req.user._id });
         await newLog.save();
 
         const user = await User.findById(req.user._id);
         const newStreak = await streakCalculator(req.user._id);
-        await User.findByIdAndUpdate(req.user._id, { currentStreak: newStreak, longestStreak: Math.max(newStreak, user.longestStreak) });
+        await User.findByIdAndUpdate(req.user._id, { currentStreak: newStreak, longestStreak: Math.max(newStreak, user.longestStreak), $push: { logs: newLog._id } });
         return res.status(201).json("log successfully created");
 
     } catch (err) {
@@ -118,6 +118,7 @@ const editLog = async (req, res, next) => {
 
 const deleteLog = async (req, res, next) => {
     try {
+        let logToBeDeletedId = req.params.id;
         let log = await Log.findOneAndDelete({
             _id: req.params.id, userId: req.user._id
         });
@@ -127,7 +128,7 @@ const deleteLog = async (req, res, next) => {
         }
 
         const newStreak = await streakCalculator(req.user._id);
-        await User.findByIdAndUpdate(req.user._id, { currentStreak: newStreak });
+        await User.findByIdAndUpdate(req.user._id, { currentStreak: newStreak, $pull: { logs: logToBeDeletedId } });
         res.status(200).json("Successfully deleted");
     } catch (err) {
         next(err);

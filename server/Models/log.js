@@ -14,7 +14,7 @@ const logSchema = new mongoose.Schema({
         enum: TAGS,
     }],
     date: {
-        type: String,
+        type: Date,
         required: true,
     },
     createdAt: {

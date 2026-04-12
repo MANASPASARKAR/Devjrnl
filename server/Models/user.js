@@ -30,6 +30,10 @@ let userSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    logs: [{
+        type: mongoose.Types.ObjectId,
+        ref: "Log",
+    }],
     lastLogDate: {
         type: Date,   
     },
