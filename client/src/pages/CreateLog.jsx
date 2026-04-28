@@ -6,6 +6,7 @@ import ErrorAlert from "../components/ErrorAlert"
 
 export default function CreateLog() {
     const navigate = useNavigate();
+    let [title, setTitle] = useState("");
     let [selectedTags, setSelectedTags] = useState([]);
     let [content, setContent] = useState("");
     let [showAllTags, setShowAllTags] = useState(false);
@@ -30,14 +31,15 @@ export default function CreateLog() {
         setContent(newContent);
     }
     const showMoreTags = () => setShowAllTags(true);
-    const discardCreation = () => { setSelectedTags([]); setContent(""); setShowAllTags(false); }
+    const discardCreation = () => { setTitle(""); setSelectedTags([]); setContent(""); setShowAllTags(false); }
 
     const handleSubmit = async (evt) => {
         evt.preventDefault();
         setIsLoading(true);
         try {
+            if (!title) throw new Error("title is required");
             if (!content) throw new Error("content is required");
-            await axios.post("/api/logs/", { content, tags: selectedTags });
+            await axios.post("/api/logs/", { title, content, tags: selectedTags });
             navigate('/logs');
         } catch (err) {
             setError(err.response ? err.response.data.message : err.message);
@@ -52,7 +54,8 @@ export default function CreateLog() {
     const displayTags = showAllTags ? TAGS : TAGS.slice(0, 10);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] font-mono px-8 py-6 flex flex-col">
+        <div className="min-h-screen bg-[#0a0a0a] font-mono p-4 flex flex-col">
+        <div className="flex-1 border border-[#6B21A8] shadow-[0_0_30px_#6B21A840] flex flex-col px-6 py-6">
 
             {error && <ErrorAlert error={error} onClose={() => setError("")} />}
 
@@ -73,6 +76,20 @@ export default function CreateLog() {
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-0">
+
+                {/* Title input row */}
+                <div className="flex items-center gap-3 py-3 border-b border-[#1e1e1e] mb-4">
+                    <span className="text-[#A8FF3E] text-[11px] tracking-[0.2em] uppercase font-bold shrink-0">TITLE:</span>
+                    <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        disabled={error !== "" || isLoading}
+                        placeholder="ENTER_ENTRY_NAME..."
+                        maxLength={100}
+                        className="flex-1 bg-transparent text-[#4AF0FF] text-xl font-black tracking-tight focus:outline-none placeholder:text-[#1a3a3a] disabled:opacity-40 caret-[#4AF0FF]"
+                    />
+                </div>
 
                 {/* Editor area */}
                 <div className="border border-[#1e1e1e] bg-[#0d0d0d] flex-1 flex flex-col">
@@ -182,6 +199,7 @@ export default function CreateLog() {
                 </div>
 
             </form>
+        </div>
         </div>
     )
 }

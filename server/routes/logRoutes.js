@@ -9,4 +9,4 @@ router.get("/:id", restrictToLoggedInOnly, getSpecificLog);
 router.put("/:id", restrictToLoggedInOnly, editLog);
 router.delete("/:id", restrictToLoggedInOnly, deleteLog);
 
-module.exports = router;
+module.exports = router;     

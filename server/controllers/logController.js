@@ -6,9 +6,9 @@ const User = require("../Models/user");
 
 const createLog = async (req, res, next) => {
     try {
-        let { content, tags, date } = req.body;
-        if (!content || !tags) {
-            throw new AppError("Content and tags are required", 400);
+        let { title, content, tags, date } = req.body;
+        if (!content || !tags || !title) {
+            throw new AppError("Content, tags and title are required", 400);
         }
 
         if (!tags.every(tag => TAGS.includes(tag))) {
@@ -31,7 +31,7 @@ const createLog = async (req, res, next) => {
         //     }
         // }
 
-        const newLog = new Log({ content, tags, date: new Date(), userId: req.user._id });
+        const newLog = new Log({ title, content, tags, date: new Date(), userId: req.user._id });
         await newLog.save();
 
         const user = await User.findById(req.user._id);
@@ -44,6 +44,8 @@ const createLog = async (req, res, next) => {
     }
 
 }
+
+
 
 const getLogs = async (req, res, next) => {
     try {
@@ -92,7 +94,7 @@ const getSpecificLog = async (req, res, next) => {
 
 const editLog = async (req, res, next) => {
     try {
-        let { content, tags } = req.body;
+        let { title, content, tags } = req.body;
 
         if (tags && !tags.every(tag => TAGS.includes(tag))) {
             throw new AppError("Invalid tag provided", 400);
@@ -101,7 +103,7 @@ const editLog = async (req, res, next) => {
 
         const log = await Log.findOneAndUpdate(
             { _id: req.params.id, userId: req.user._id },
-            { content, tags },
+            { title, content, tags },
             { new: true }
         );
 

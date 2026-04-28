@@ -43,7 +43,7 @@ const handleRegister = async (req, res, next) => {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(201).json({ message: 'Account created', username: user.username })
+    res.status(201).json({ message: 'Account created', username: username })
   } catch (err) {
     next(err);
   }

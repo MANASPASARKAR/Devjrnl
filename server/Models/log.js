@@ -5,6 +5,10 @@ const logSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: "User",
     },
+    title: {
+        type: String,
+        required: true,
+    },
     content: {
         type: String,
         required: true,

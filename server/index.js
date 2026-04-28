@@ -3,7 +3,8 @@ const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
 const authRouter = require("./routes/authRoutes");
-const logRouter = require("./routes/logRoutes")
+const logRouter = require("./routes/logRoutes");
+const dashboardRouter = require("./routes/dashboardRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const cookieParser = require("cookie-parser");
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/logs", logRouter);
+app.use("/api/dashboard", dashboardRouter);
 app.use(errorHandler);
 
 app.get("/{*path}", (req, res) => {
