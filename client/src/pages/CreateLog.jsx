@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import axios from "axios"
 import TAGS from "../constants/tags"
 import { useNavigate } from "react-router-dom"
 import ErrorAlert from "../components/ErrorAlert"
 import MDEditor from "@uiw/react-md-editor"
+import { DAILY_LOG_LIMIT_ERROR, hasReachedDailyLogLimit } from "../utils/logLimits"
 
 export default function CreateLog() {
     const navigate = useNavigate();
@@ -13,8 +14,25 @@ export default function CreateLog() {
     let [showAllTags, setShowAllTags] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [dailyLimitReached, setDailyLimitReached] = useState(false);
 
     const [images, setImages] = useState([]);
+
+    useEffect(() => {
+        const checkDailyLimit = async () => {
+            try {
+                const response = await axios.get("/api/logs");
+                if (hasReachedDailyLogLimit(response.data || [])) {
+                    setDailyLimitReached(true);
+                    setError(DAILY_LOG_LIMIT_ERROR);
+                }
+            } catch (err) {
+                setError(err.response?.data?.message || err.message);
+            }
+        };
+
+        checkDailyLimit();
+    }, []);
 
     const handleTagSelect = (tag) => {
         if (selectedTags.includes(tag)) {
@@ -42,6 +60,11 @@ export default function CreateLog() {
 
     const handleSubmit = async (evt) => {
         evt.preventDefault();
+        if (dailyLimitReached) {
+            setError(DAILY_LOG_LIMIT_ERROR);
+            return;
+        }
+
         setIsLoading(true);
         try {
             if (!title) throw new Error("title is required");
@@ -68,6 +91,7 @@ export default function CreateLog() {
     const complexity = wordCount < 50 ? "LOW" : wordCount < 150 ? "MED" : "HIGH";
     const today = new Date().toISOString().split('T')[0];
     const displayTags = showAllTags ? TAGS : TAGS.slice(0, 10);
+    const formDisabled = dailyLimitReached || error !== "" || isLoading;
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] font-mono p-4 flex flex-col">
@@ -100,7 +124,7 @@ export default function CreateLog() {
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        disabled={error !== "" || isLoading}
+                        disabled={formDisabled}
                         placeholder="ENTER_ENTRY_NAME..."
                         maxLength={100}
                         className="flex-1 bg-transparent text-[#4AF0FF] text-xl font-black tracking-tight focus:outline-none placeholder:text-[#1a3a3a] disabled:opacity-40 caret-[#4AF0FF]"
@@ -135,6 +159,7 @@ export default function CreateLog() {
                             preview="edit"
                             height={400}
                             textareaProps={{
+                                disabled: formDisabled,
                                 placeholder: "INIT LOG: Start writing your entry here (Markdown supported)..."
                             }}
                             className="bg-transparent"
@@ -160,7 +185,7 @@ export default function CreateLog() {
                             <button
                                 key={tag}
                                 type="button"
-                                disabled={error !== "" || isLoading}
+                                disabled={formDisabled}
                                 onClick={() => handleTagSelect(tag)}
                                 className={`px-3 py-1 text-[10px] tracking-widest uppercase border transition-colors disabled:opacity-40
                                     ${selectedTags.includes(tag)
@@ -175,6 +200,7 @@ export default function CreateLog() {
                             <button
                                 type="button"
                                 onClick={showMoreTags}
+                                disabled={formDisabled}
                                 className="px-3 py-1 text-[10px] tracking-widest uppercase border border-dashed border-[#2a2a2a] text-[#414A35] hover:border-[#A8FF3E] hover:text-[#A8FF3E] transition-colors"
                             >
                                 + MORE
@@ -201,7 +227,8 @@ export default function CreateLog() {
                                         <button 
                                             type="button" 
                                             onClick={() => removeImage(i)}
-                                            className="absolute top-2 right-2 bg-[#111111] text-[#FF4444] text-[10px] w-5 h-5 flex items-center justify-center border border-[#FF4444] opacity-0 group-hover:opacity-100 transition-opacity"
+                                            disabled={formDisabled}
+                                            className="absolute top-2 right-2 bg-[#111111] text-[#FF4444] text-[10px] w-5 h-5 flex items-center justify-center border border-[#FF4444] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40"
                                         >
                                             X
                                         </button>
@@ -218,6 +245,7 @@ export default function CreateLog() {
                                     multiple 
                                     onChange={handleImageChange} 
                                     className="hidden" 
+                                    disabled={formDisabled}
                                 />
                                 + [ UPLOAD_IMAGE_DATA ]
                             </label>
@@ -243,7 +271,7 @@ export default function CreateLog() {
                     <div className="flex gap-3">
                         <button
                             type="button"
-                            disabled={error !== "" || isLoading}
+                            disabled={formDisabled}
                             onClick={discardCreation}
                             className="px-6 py-2 text-[11px] tracking-widest uppercase border border-[#2a2a2a] text-[#C0CAAF] hover:border-[#C0CAAF] transition-colors disabled:opacity-40"
                         >
@@ -251,7 +279,7 @@ export default function CreateLog() {
                         </button>
                         <button
                             type="submit"
-                            disabled={error !== "" || isLoading}
+                            disabled={formDisabled}
                             className="px-6 py-2 text-[11px] tracking-widest uppercase bg-[#A8FF3E] text-[#0F2000] font-black hover:bg-[#89dc12] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                             {isLoading ? "COMMITTING..." : "COMMIT LOG"}

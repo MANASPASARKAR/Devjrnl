@@ -1,10 +1,30 @@
 import axios from 'axios'
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { hasReachedDailyLogLimit } from '../utils/logLimits'
 
 export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
     const isLoggedIn = !!localStorage.getItem('username');
+    const [dailyLimitReached, setDailyLimitReached] = useState(false);
+
+    useEffect(() => {
+        if (!isLoggedIn) {
+            return;
+        }
+
+        const fetchDailyLimit = async () => {
+            try {
+                const response = await axios.get("/api/logs");
+                setDailyLimitReached(hasReachedDailyLogLimit(response.data || []));
+            } catch {
+                setDailyLimitReached(false);
+            }
+        };
+
+        fetchDailyLimit();
+    }, [isLoggedIn, location.pathname]);
 
     const SignOut = async () => {
         await axios.post("/api/auth/logout");
@@ -15,11 +35,15 @@ export default function Navbar() {
     const navLinks = [
         { label: 'LOG', path: '/logs' },
         { label: 'DASHBOARD', path: '/dashboard' },
-        { label: 'CREATE', path: '/createlog' },
+        { label: 'CREATE', path: '/createlog', disabled: dailyLimitReached },
     ];
 
-    const linkClass = (path) => {
+    const linkClass = (path, disabled = false) => {
         const isActive = location.pathname === path;
+        if (disabled) {
+            return "relative px-5 h-12 text-[11px] tracking-[0.2em] uppercase transition-all text-[#555] opacity-40 cursor-not-allowed";
+        }
+
         return `relative px-5 h-12 text-[11px] tracking-[0.2em] uppercase transition-all
             ${isActive
                 ? 'text-[#A8FF3E] underline underline-offset-12 decoration-[#A8FF3E]'
@@ -42,8 +66,14 @@ export default function Navbar() {
 
             {/* Center — only show nav links when logged in */}
             <div className="flex items-center">
-                {isLoggedIn && navLinks.map(({ label, path }) => (
-                    <button key={path} onClick={() => navigate(path)} className={linkClass(path)}>
+                {isLoggedIn && navLinks.map(({ label, path, disabled }) => (
+                    <button
+                        key={path}
+                        onClick={() => !disabled && navigate(path)}
+                        disabled={disabled}
+                        title={disabled ? "Daily log limit reached" : undefined}
+                        className={linkClass(path, disabled)}
+                    >
                         {label}
                     </button>
                 ))}

@@ -109,7 +109,7 @@ export default function Log() {
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                            code({ node, inline, className, children, ...props }) {
+                            code({ inline, className, children, ...props }) {
                                 const match = /language-(\w+)/.exec(className || "");
                                 return !inline && match ? (
                                     <div className="my-5 border border-[#1f1f1f] rounded-sm overflow-hidden">

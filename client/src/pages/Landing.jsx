@@ -113,7 +113,7 @@ export default function Landing() {
                             </svg>
                             <span className="text-[#A8FF3E] text-[10px] tracking-widest uppercase">03</span>
                         </div>
-                        <h3 className="text-white text-base font-bold mb-3 tracking-tight">Smart Search</h3>
+                        <h3 className="text-white text-base font-bold mb-3 tracking-tight">Smart Search (in the making)</h3>
                         <p className="text-gray-500 text-sm leading-relaxed">
                             Filter and search across all logs by content, tags, or date. Nothing gets lost.
                         </p>

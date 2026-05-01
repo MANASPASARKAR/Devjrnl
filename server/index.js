@@ -1,13 +1,18 @@
-require("dotenv").config({ path: require("path").join(__dirname, "../.env") })
 const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
+
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
+require("dotenv").config({ path: path.join(__dirname, ".env"), override: true });
+
 const authRouter = require("./routes/authRoutes");
 const logRouter = require("./routes/logRoutes");
 const dashboardRouter = require("./routes/dashboardRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const cookieParser = require("cookie-parser");
 const app = express();
+const port = process.env.PORT || 3000;
+const clientDistPath = path.join(__dirname, "../client/dist");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -16,13 +21,14 @@ app.use("/api/auth", authRouter);
 app.use("/api/logs", logRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use(errorHandler);
+app.use(express.static(clientDistPath));
 
 app.get("/{*path}", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/index.html"));
+  res.sendFile(path.join(clientDistPath, "index.html"));
 });
 
-app.listen(3000, () => {
-  console.log("App Listening on port 3000");
+app.listen(port, () => {
+  console.log(`App Listening on port ${port}`);
   mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/devjrnl")
     .then(() => console.log("Connected to MongoDB"))
     .catch(err => console.error("MongoDB connection error:", err));
