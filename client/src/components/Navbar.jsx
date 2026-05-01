@@ -37,7 +37,7 @@ export default function Navbar() {
                 className="text-[#A8FF3E] font-black text-lg tracking-tight cursor-pointer select-none"
                 onClick={() => navigate(isLoggedIn ? '/dashboard' : '/login')}
             >
-                DevLog
+                Devjrnl
             </span>
 
             {/* Center — only show nav links when logged in */}

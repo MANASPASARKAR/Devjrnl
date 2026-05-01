@@ -8,8 +8,15 @@ let userSchema = new mongoose.Schema({
     },
     passwordHash: {
         type: String,
-        required: true,
+        // Not required for OAuth users
     },
+    googleId: {
+        type: String,
+        sparse: true,
+        unique: true
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
     username: {
         type: String,
         required: true,

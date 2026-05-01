@@ -1,37 +1,68 @@
+const { createClient } = require('@supabase/supabase-js');
 const AppError = require("../utils/appError");
 const Log = require("../Models/log");
 const TAGS = require("../constants/tags");
 const { streakCalculator } = require("../utils/streakCalculator");
 const User = require("../Models/user");
 
+const getSupabase = () => {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error("SUPABASE_URL and SUPABASE_KEY must be set in the .env file");
+    }
+    return createClient(supabaseUrl, supabaseKey);
+};
+
 const createLog = async (req, res, next) => {
     try {
-        let { title, content, tags, date } = req.body;
+        let { title, content, date } = req.body;
+        let tags = req.body.tags;
+
+        if (typeof tags === 'string') {
+            try {
+                tags = JSON.parse(tags);
+            } catch (e) {
+                // Ignore parse error, maybe it's just a single tag string
+                tags = [tags];
+            }
+        }
+
         if (!content || !tags || !title) {
             throw new AppError("Content, tags and title are required", 400);
         }
 
-        if (!tags.every(tag => TAGS.includes(tag))) {
+        if (!Array.isArray(tags) || !tags.every(tag => TAGS.includes(tag))) {
             throw new AppError("Invalid tag provided", 400);
         }
 
-        // if (date) {
-        //     const today = new Date().toISOString().split('T')[0];
+        let imageUrls = [];
+        if (req.files && req.files.length > 0) {
+            const supabase = getSupabase();
+            for (const file of req.files) {
+                const fileExt = file.originalname.split('.').pop();
+                const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        //     const threeMonthsAgo = new Date();
-        //     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-        //     const threeMonthsAgoStr = threeMonthsAgo.toISOString().split('T')[0];
+                const { data, error } = await supabase.storage
+                    .from('devjrnl')
+                    .upload(fileName, file.buffer, {
+                        contentType: file.mimetype,
+                    });
 
-        //     if (date > today) {
-        //         throw new AppError("Log date cannot be in the future", 400);
-        //     }
+                if (error) {
+                    console.error("Supabase upload error:", error);
+                    throw new AppError("Failed to upload image to Supabase", 500);
+                }
 
-        //     if (date < threeMonthsAgoStr) {
-        //         throw new AppError("Log date cannot be older than 3 months", 400);
-        //     }
-        // }
+                const { data: publicUrlData } = supabase.storage
+                    .from('devjrnl')
+                    .getPublicUrl(fileName);
 
-        const newLog = new Log({ title, content, tags, date: new Date(), userId: req.user._id });
+                imageUrls.push(publicUrlData.publicUrl);
+            }
+        }
+
+        const newLog = new Log({ title, content, tags, images: imageUrls, date: new Date(), userId: req.user._id });
         await newLog.save();
 
         const user = await User.findById(req.user._id);
@@ -42,7 +73,6 @@ const createLog = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-
 }
 
 
@@ -94,22 +124,61 @@ const getSpecificLog = async (req, res, next) => {
 
 const editLog = async (req, res, next) => {
     try {
-        let { title, content, tags } = req.body;
+        let { title, content } = req.body;
+        let tags = req.body.tags;
+        let deletedImages = req.body.deletedImages;
 
-        if (tags && !tags.every(tag => TAGS.includes(tag))) {
+        if (typeof tags === 'string') {
+            try { tags = JSON.parse(tags); } catch (e) { tags = [tags]; }
+        }
+
+        if (typeof deletedImages === 'string') {
+            try { deletedImages = JSON.parse(deletedImages); } catch (e) { deletedImages = []; }
+        }
+
+        if (tags && (!Array.isArray(tags) || !tags.every(tag => TAGS.includes(tag)))) {
             throw new AppError("Invalid tag provided", 400);
         }
 
+        const log = await Log.findOne({ _id: req.params.id, userId: req.user._id });
+        if (!log) throw new AppError("Log not found", 404);
 
-        const log = await Log.findOneAndUpdate(
-            { _id: req.params.id, userId: req.user._id },
-            { title, content, tags },
-            { new: true }
-        );
+        let imageUrls = log.images || [];
 
-        if (!log) {
-            throw new AppError("Log not found", 404);
+        if (deletedImages && deletedImages.length > 0) {
+            const supabase = getSupabase();
+            for (const url of deletedImages) {
+                const fileName = url.split('/').pop();
+                await supabase.storage.from('devjrnl').remove([fileName]);
+                imageUrls = imageUrls.filter(img => img !== url);
+            }
         }
+
+        if (req.files && req.files.length > 0) {
+            const supabase = getSupabase();
+            for (const file of req.files) {
+                const fileExt = file.originalname.split('.').pop();
+                const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                const { error } = await supabase.storage
+                    .from('devjrnl')
+                    .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+                if (!error) {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('devjrnl')
+                        .getPublicUrl(fileName);
+                    imageUrls.push(publicUrlData.publicUrl);
+                }
+            }
+        }
+
+        log.title = title || log.title;
+        log.content = content || log.content;
+        log.tags = tags || log.tags;
+        log.images = imageUrls;
+
+        await log.save();
 
         res.status(200).json(log);
 
@@ -121,13 +190,19 @@ const editLog = async (req, res, next) => {
 const deleteLog = async (req, res, next) => {
     try {
         let logToBeDeletedId = req.params.id;
-        let log = await Log.findOneAndDelete({
-            _id: req.params.id, userId: req.user._id
-        });
+        let log = await Log.findOne({ _id: req.params.id, userId: req.user._id });
 
         if (!log) {
             throw new AppError("log not found", 404);
         }
+
+        if (log.images && log.images.length > 0) {
+            const supabase = getSupabase();
+            const filesToRemove = log.images.map(url => url.split('/').pop());
+            await supabase.storage.from('devjrnl').remove(filesToRemove);
+        }
+
+        await Log.findByIdAndDelete(logToBeDeletedId);
 
         const newStreak = await streakCalculator(req.user._id);
         await User.findByIdAndUpdate(req.user._id, { currentStreak: newStreak, $pull: { logs: logToBeDeletedId } });

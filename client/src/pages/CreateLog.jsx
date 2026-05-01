@@ -3,6 +3,7 @@ import axios from "axios"
 import TAGS from "../constants/tags"
 import { useNavigate } from "react-router-dom"
 import ErrorAlert from "../components/ErrorAlert"
+import MDEditor from "@uiw/react-md-editor"
 
 export default function CreateLog() {
     const navigate = useNavigate();
@@ -13,6 +14,8 @@ export default function CreateLog() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
+    const [images, setImages] = useState([]);
+
     const handleTagSelect = (tag) => {
         if (selectedTags.includes(tag)) {
             setSelectedTags(selectedTags.filter(t => t !== tag));
@@ -21,17 +24,21 @@ export default function CreateLog() {
         }
     }
 
-    const HandleContentChange = (evt) => {
-        const newContent = evt.target.value;
-        const newWordCount = newContent.trim() === "" ? 0 : newContent.trim().split(/\s+/).length;
-        if (newWordCount > 200) {
-            setError("WORD_LIMIT_EXCEEDED: max 200 words per log entry");
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (images.length + files.length > 3) {
+            setError("MAXIMUM_3_IMAGES_ALLOWED");
             return;
         }
-        setContent(newContent);
+        setImages([...images, ...files]);
     }
+
+    const removeImage = (index) => {
+        setImages(images.filter((_, i) => i !== index));
+    }
+
     const showMoreTags = () => setShowAllTags(true);
-    const discardCreation = () => { setTitle(""); setSelectedTags([]); setContent(""); setShowAllTags(false); }
+    const discardCreation = () => { setTitle(""); setSelectedTags([]); setContent(""); setShowAllTags(false); setImages([]); }
 
     const handleSubmit = async (evt) => {
         evt.preventDefault();
@@ -39,8 +46,17 @@ export default function CreateLog() {
         try {
             if (!title) throw new Error("title is required");
             if (!content) throw new Error("content is required");
-            await axios.post("/api/logs/", { title, content, tags: selectedTags });
-            navigate('/logs');
+            
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("content", content);
+            formData.append("tags", JSON.stringify(selectedTags));
+            images.forEach(img => formData.append("images", img));
+
+            await axios.post("/api/logs/", formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            navigate('/logs', { state: { successMessage: "LOG_STORED_SUCCESSFULLY" } });
         } catch (err) {
             setError(err.response ? err.response.data.message : err.message);
         } finally {
@@ -104,26 +120,29 @@ export default function CreateLog() {
                         </span>
                     </div>
 
-                    {/* Editor body with line numbers */}
-                    <div className="flex flex-1 min-h-[260px]">
-                        {/* Line numbers */}
-                        <div className="flex flex-col items-end px-3 pt-3 select-none min-w-[40px]">
-                            {(content || " ").split("\n").map((_, i) => (
-                                <span key={i} className="text-[#2a2a2a] text-[11px] leading-6">
-                                    {String(i + 1).padStart(2, "0")}
-                                </span>
-                            ))}
-                        </div>
-
-                        {/* Textarea */}
-                        <textarea
-                            name="content"
+                    {/* Editor body */}
+                    <div className="flex-1 overflow-auto custom-md-editor-wrapper">
+                        <MDEditor
                             value={content}
-                            onChange={HandleContentChange}
-                            disabled={error !== "" || isLoading }
-                            placeholder="INIT LOG: Start writing your entry here..."
-                            className="flex-1 bg-transparent text-[#E5E2E1] text-[13px] leading-6 pt-3 pr-4 pb-3 resize-none focus:outline-none placeholder:text-[#2a2a2a] disabled:opacity-40 caret-[#4AF0FF]"
-                            spellCheck={false}
+                            onChange={(val) => {
+                                const newWordCount = (val || "").trim() === "" ? 0 : (val || "").trim().split(/\s+/).length;
+                                if (newWordCount > 800) {
+                                    setError("WORD_LIMIT_EXCEEDED");
+                                    return;
+                                }
+                                setContent(val || "");
+                            }}
+                            preview="edit"
+                            height={400}
+                            textareaProps={{
+                                placeholder: "INIT LOG: Start writing your entry here (Markdown supported)..."
+                            }}
+                            className="bg-transparent"
+                            style={{
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                boxShadow: 'none'
+                            }}
                         />
                     </div>
                 </div>
@@ -160,6 +179,48 @@ export default function CreateLog() {
                             >
                                 + MORE
                             </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Images */}
+                <div className="border-x border-b border-[#1e1e1e] bg-[#0d0d0d] px-4 py-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <span className="text-[#A8FF3E] text-[8px]">■</span>
+                        <span className="text-[#C0CAAF] text-[10px] tracking-[0.2em] uppercase opacity-60">
+                            ATTACHMENTS [MAX_3]
+                        </span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-3">
+                        {images.length > 0 && (
+                            <div className="flex gap-4 overflow-x-auto pb-2">
+                                {images.map((img, i) => (
+                                    <div key={i} className="relative border border-[#2a2a2a] p-1 bg-[#111111] group">
+                                        <img src={URL.createObjectURL(img)} alt="preview" className="h-20 w-auto object-cover opacity-80" />
+                                        <button 
+                                            type="button" 
+                                            onClick={() => removeImage(i)}
+                                            className="absolute top-2 right-2 bg-[#111111] text-[#FF4444] text-[10px] w-5 h-5 flex items-center justify-center border border-[#FF4444] opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            X
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        
+                        {images.length < 3 && (
+                            <label className="cursor-pointer border border-dashed border-[#2a2a2a] text-[#C0CAAF] opacity-50 hover:opacity-100 hover:border-[#A8FF3E] hover:text-[#A8FF3E] transition-colors py-3 flex justify-center items-center text-[10px] tracking-widest uppercase">
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    multiple 
+                                    onChange={handleImageChange} 
+                                    className="hidden" 
+                                />
+                                + [ UPLOAD_IMAGE_DATA ]
+                            </label>
                         )}
                     </div>
                 </div>

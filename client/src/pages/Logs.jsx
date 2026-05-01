@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import axios from 'axios'
 import TAGS from "../constants/tags"
 import ErrorAlert from "../components/ErrorAlert"
-import { useNavigate } from "react-router-dom"
+import SuccessAlert from "../components/SuccessAlert"
+import { useNavigate, useLocation } from "react-router-dom"
 
 function formatDate(raw) {
     if (!raw) return "—";
@@ -11,6 +12,7 @@ function formatDate(raw) {
 
 export default function Logs() {
     const navigate = useNavigate();
+    const location = useLocation();
     let [logs, setLogs]               = useState([]);
     let [search, setSearch]           = useState("");
     let [searched, setSearched]       = useState(false);
@@ -19,6 +21,12 @@ export default function Logs() {
     let [showAllLogs, setShowAllLogs] = useState(false);
     let [error, setError]             = useState("");
     let [loading, setLoading]         = useState(true);
+    const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || "");
+
+    const dismissSuccess = () => {
+        setSuccessMessage("");
+        navigate(location.pathname, { replace: true });
+    };
 
     const isFiltering = search !== "" || selectedTags.length > 0;
 
@@ -58,7 +66,8 @@ export default function Logs() {
     const displayLogs = showAllLogs ? logs : logs.slice(0, 4);
 
     return (
-        <div className="min-h-screen w-full bg-[#0e0e0e] text-gray-200 font-mono">
+        <div className="min-h-screen w-full bg-[#0e0e0e] text-gray-200 font-mono" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)", backgroundSize: "100% 40px" }}>
+        {successMessage && <SuccessAlert message={successMessage} onClose={dismissSuccess} />}
         <div className="max-w-5xl mx-auto px-8 py-10">
 
             {/* ── Title ── */}
@@ -168,6 +177,13 @@ export default function Logs() {
                                 <span className="text-[11px] text-gray-600 tracking-widest">
                                     {formatDate(log.date)}
                                 </span>
+                                
+                                {log.images && log.images.length > 0 && (
+                                    <span className="text-[10px] text-[#39ff14] tracking-widest flex items-center gap-1 opacity-80" title={`${log.images.length} attachments`}>
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                        {log.images.length}
+                                    </span>
+                                )}
 
                                 {/* Tags — top-right */}
                                 <div className="ml-auto flex gap-2">

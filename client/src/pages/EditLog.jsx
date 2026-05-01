@@ -3,6 +3,7 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import TAGS from "../constants/tags";
 import ErrorAlert from "../components/ErrorAlert";
+import MDEditor from "@uiw/react-md-editor";
 
 export default function EditLog() {
     const { id }   = useParams();
@@ -15,6 +16,9 @@ export default function EditLog() {
     const [showAllTags, setShowAllTags]   = useState(false);
     const [error, setError]               = useState("");
     const [isLoading, setIsLoading]       = useState(false);
+    const [existingImages, setExistingImages] = useState([]);
+    const [deletedImages, setDeletedImages]   = useState([]);
+    const [newImages, setNewImages]           = useState([]);
 
     useEffect(() => {
         const fetchLog = async () => {
@@ -23,17 +27,36 @@ export default function EditLog() {
                 setTitle(response.data.title);
                 setContent(response.data.content);
                 setSelectedTags(response.data.tags);
+                setExistingImages(response.data.images || []);
             } catch (err) {
                 setError(err.response?.data?.message || "Failed to load log.");
             }
         };
         fetchLog();
-    }, []);
+    }, [id]);
 
     const handleTagSelect = (tag) =>
         setSelectedTags(prev =>
             prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
         );
+
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (existingImages.length + newImages.length + files.length > 3) {
+            setError("MAXIMUM_3_IMAGES_ALLOWED");
+            return;
+        }
+        setNewImages([...newImages, ...files]);
+    };
+
+    const removeNewImage = (index) => {
+        setNewImages(newImages.filter((_, i) => i !== index));
+    };
+
+    const removeExistingImage = (url) => {
+        setExistingImages(existingImages.filter(img => img !== url));
+        setDeletedImages([...deletedImages, url]);
+    };
 
     const displayTags = showAllTags ? TAGS : TAGS.slice(0, 10);
     
@@ -42,12 +65,17 @@ export default function EditLog() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            await axios.put(`/api/logs/${id}`, {
-                title,
-                content,
-                tags: selectedTags,
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("content", content);
+            formData.append("tags", JSON.stringify(selectedTags));
+            formData.append("deletedImages", JSON.stringify(deletedImages));
+            newImages.forEach(img => formData.append("images", img));
+
+            await axios.put(`/api/logs/${id}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
-            navigate(`/logs/${id}`);
+            navigate(`/logs/${id}`, { state: { successMessage: "LOG_UPDATED_SUCCESSFULLY" } });
         } catch (err) {
             setError(err.response?.data?.message || "Failed to save.");
         } finally {
@@ -123,6 +151,57 @@ export default function EditLog() {
                         </div>
                     </div>
 
+                    {/* ── Images ── */}
+                    <div className="mb-5">
+                        <label className="block text-[#A8FF3E] text-[10px] tracking-[0.2em] uppercase mb-3 opacity-80">
+                            &gt; ATTACHMENTS [MAX_3]:
+                        </label>
+                        <div className="flex flex-col gap-3">
+                            {(existingImages.length > 0 || newImages.length > 0) && (
+                                <div className="flex gap-4 overflow-x-auto pb-2">
+                                    {existingImages.map((img, i) => (
+                                        <div key={`ext-${i}`} className="relative border border-[#2a2a2a] p-1 bg-[#111111] group">
+                                            <img src={img} alt="preview" className="h-20 w-auto object-cover opacity-80" />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => removeExistingImage(img)}
+                                                className="absolute top-2 right-2 bg-[#111111] text-[#FF4444] text-[10px] w-5 h-5 flex items-center justify-center border border-[#FF4444] opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                X
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {newImages.map((img, i) => (
+                                        <div key={`new-${i}`} className="relative border border-[#A8FF3E] p-1 bg-[#111111] group">
+                                            <img src={URL.createObjectURL(img)} alt="preview" className="h-20 w-auto object-cover opacity-80" />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => removeNewImage(i)}
+                                                className="absolute top-2 right-2 bg-[#111111] text-[#FF4444] text-[10px] w-5 h-5 flex items-center justify-center border border-[#FF4444] opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                X
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {(existingImages.length + newImages.length) < 3 && (
+                                <label className="cursor-pointer border border-dashed border-[#2a2a2a] text-[#555] hover:border-[#A8FF3E] hover:text-[#A8FF3E] transition-colors py-3 flex justify-center items-center text-[10px] tracking-widest uppercase disabled:opacity-40">
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        multiple 
+                                        onChange={handleImageChange} 
+                                        className="hidden" 
+                                        disabled={!!error || isLoading}
+                                    />
+                                    + [ UPLOAD_NEW_IMAGE_DATA ]
+                                </label>
+                            )}
+                        </div>
+                    </div>
+
                     {/* ── Editor ── */}
                     <div className="flex-1 border border-[#1e1e1e] bg-[#0d0d0d] flex flex-col mb-0">
 
@@ -136,22 +215,22 @@ export default function EditLog() {
                             </span>
                         </div>
 
-                        {/* line numbers + textarea */}
-                        <div className="flex flex-1 min-h-[280px]">
-                            <div className="flex flex-col items-end px-3 pt-3 select-none min-w-[40px] border-r border-[#1a1a1a]">
-                                {(content || " ").split("\n").map((_, i) => (
-                                    <span key={i} className="text-[#2a2a2a] text-[11px] leading-6">
-                                        {String(i + 1).padStart(2, "0")}
-                                    </span>
-                                ))}
-                            </div>
-                            <textarea
+                        {/* MDEditor */}
+                        <div className="flex-1 overflow-auto custom-md-editor-wrapper">
+                            <MDEditor
                                 value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                disabled={!!error || isLoading}
-                                placeholder="// start editing..."
-                                className="flex-1 bg-transparent text-[#A8FF3E] text-[13px] leading-6 pt-3 px-4 pb-3 resize-none focus:outline-none placeholder:text-[#1e2e1e] disabled:opacity-40 caret-[#A8FF3E] italic"
-                                spellCheck={false}
+                                onChange={(val) => setContent(val || "")}
+                                preview="edit"
+                                height={400}
+                                textareaProps={{
+                                    placeholder: "// start editing (Markdown supported)..."
+                                }}
+                                className="bg-transparent"
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    border: 'none',
+                                    boxShadow: 'none'
+                                }}
                             />
                         </div>
                     </div>

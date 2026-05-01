@@ -1,17 +1,29 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import ErrorAlert from "../components/ErrorAlert";
+import SuccessAlert from "../components/SuccessAlert";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export default function Log() {
     const { id }   = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [log, setLog]                   = useState(null);
     const [error, setError]               = useState("");
     const [loading, setLoading]           = useState(true);
     const [deleting, setDeleting]         = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || "");
+
+    const dismissSuccess = () => {
+        setSuccessMessage("");
+        navigate(location.pathname, { replace: true });
+    };
 
     useEffect(() => {
         const fetchLog = async () => {
@@ -32,7 +44,7 @@ export default function Log() {
         setDeleting(true);
         try {
             await axios.delete(`/api/logs/${id}`);
-            navigate("/logs");
+            navigate("/logs", { state: { successMessage: "LOG_PURGED_SUCCESSFULLY" } });
         } catch (err) {
             setError(err.response?.data?.message || "Delete failed.");
             setDeleting(false);
@@ -51,11 +63,9 @@ export default function Log() {
 
     const crumbs = ["JOURNAL", ...(log?.tags?.slice(0, 2).map(t => t.toUpperCase()) ?? [])];
 
-    /* split content on fenced code blocks */
-    const parts = (log?.content ?? "").split(/(```[\s\S]*?```)/g);
-
     return (
         <div className="min-h-screen w-full bg-[#0e0e0e] text-gray-200 font-mono">
+            {successMessage && <SuccessAlert message={successMessage} onClose={dismissSuccess} />}
             {error && <ErrorAlert error={error} onClose={() => setError("")} />}
             <div className="fixed left-0 top-0 w-1 h-full bg-[#39ff14] opacity-80" />
 
@@ -95,34 +105,41 @@ export default function Log() {
                 <div className="w-10 h-px bg-[#39ff14] mb-8" />
 
                 {/* Content */}
-                <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm px-7 py-7 mb-8">
-                    {parts.map((part, i) => {
-                        if (part.startsWith("```") && part.endsWith("```")) {
-                            const inner = part.slice(3, -3);
-                            const lines = inner.split("\n");
-                            const lang  = lines[0].trim() || "code";
-                            const code  = lines.slice(1).join("\n");
-                            return (
-                                <div key={i} className="my-5 border border-[#1f1f1f] rounded-sm overflow-hidden">
-                                    <div className="flex items-center justify-between px-4 py-2 bg-[#181818] border-b border-[#1f1f1f]">
-                                        <span className="text-[10px] text-gray-500 tracking-widest uppercase">{lang}</span>
-                                        <div className="flex gap-1.5">
-                                            <span className="w-2 h-2 rounded-full bg-[#2a2a2a]" />
-                                            <span className="w-2 h-2 rounded-full bg-[#2a2a2a]" />
+                <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm px-7 py-7 mb-8 text-gray-300 text-sm leading-relaxed prose prose-invert max-w-none prose-a:text-[#39ff14] hover:prose-a:text-[#39ff14]/80 prose-pre:bg-[#111] prose-pre:border prose-pre:border-[#1f1f1f] prose-pre:p-0 break-words overflow-hidden">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            code({ node, inline, className, children, ...props }) {
+                                const match = /language-(\w+)/.exec(className || "");
+                                return !inline && match ? (
+                                    <div className="my-5 border border-[#1f1f1f] rounded-sm overflow-hidden">
+                                        <div className="flex items-center justify-between px-4 py-2 bg-[#181818] border-b border-[#1f1f1f]">
+                                            <span className="text-[10px] text-gray-500 tracking-widest uppercase">{match[1]}</span>
+                                            <div className="flex gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-[#2a2a2a]" />
+                                                <span className="w-2 h-2 rounded-full bg-[#2a2a2a]" />
+                                            </div>
                                         </div>
+                                        <SyntaxHighlighter
+                                            style={vscDarkPlus}
+                                            language={match[1]}
+                                            PreTag="div"
+                                            customStyle={{ margin: 0, background: "#111", padding: "1rem" }}
+                                            {...props}
+                                        >
+                                            {String(children).replace(/\n$/, "")}
+                                        </SyntaxHighlighter>
                                     </div>
-                                    <pre className="bg-[#111] px-5 py-4 text-sm text-[#39ff14] italic font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
-                                        {code}
-                                    </pre>
-                                </div>
-                            );
-                        }
-                        return (
-                            <p key={i} className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-                                {part}
-                            </p>
-                        );
-                    })}
+                                ) : (
+                                    <code className="bg-[#1f1f1f] text-[#39ff14] px-1.5 py-0.5 rounded-sm font-mono text-[13px]" {...props}>
+                                        {children}
+                                    </code>
+                                );
+                            },
+                        }}
+                    >
+                        {log?.content || ""}
+                    </ReactMarkdown>
                 </div>
 
                 {/* Tags */}
@@ -133,6 +150,25 @@ export default function Log() {
                                 [{tag}]
                             </span>
                         ))}
+                    </div>
+                )}
+
+                {/* Images */}
+                {log?.images?.length > 0 && (
+                    <div className="mb-10">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="text-[#39ff14] text-[8px]">■</span>
+                            <span className="text-gray-500 text-[10px] tracking-[0.2em] uppercase">
+                                ATTACHMENTS_
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap gap-4">
+                            {log.images.map((img, i) => (
+                                <a key={i} href={img} target="_blank" rel="noopener noreferrer" className="block border border-[#2a2a2a] p-1 bg-[#111111] hover:border-[#39ff14] transition-colors group">
+                                    <img src={img} alt={`Attachment ${i + 1}`} className="h-32 w-auto object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                </a>
+                            ))}
+                        </div>
                     </div>
                 )}
 

@@ -23,7 +23,7 @@ app.get("/{*path}", (req, res) => {
 
 app.listen(3000, () => {
   console.log("App Listening on port 3000");
-  mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/devlog")
+  mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/devjrnl")
     .then(() => console.log("Connected to MongoDB"))
     .catch(err => console.error("MongoDB connection error:", err));
 });

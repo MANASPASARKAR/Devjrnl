@@ -6,7 +6,7 @@ export default function Footer() {
                 {/* Left side */}
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                        <span className="text-[#A8FF3E] font-black text-sm tracking-tight">DEVLOG</span>
+                        <span className="text-[#A8FF3E] font-black text-sm tracking-tight">DEVJRNL</span>
                         <span className="text-[#414A35] text-[10px] tracking-widest">// V1.0.0-STABLE</span>
                     </div>
                     <span className="text-[#C0CAAF] text-[10px] tracking-[0.15em] opacity-60 uppercase">
@@ -43,7 +43,7 @@ export default function Footer() {
                             LINKEDIN
                         </a>
                         <a
-                            href="https://github.com/MANASPASARKAR/DevLog"
+                            href="https://github.com/MANASPASARKAR/devjrnl"
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center gap-1.5 text-[#C0CAAF] text-[10px] tracking-widest uppercase opacity-60 hover:opacity-100 hover:text-[#A8FF3E] transition-colors"
@@ -55,7 +55,7 @@ export default function Footer() {
 
                     {/* Copyright */}
                     <span className="text-[#C0CAAF] text-[10px] tracking-widest opacity-40">
-                        © 2026 <span className="text-[#C0CAAF] opacity-80 font-bold">DevLog</span>
+                        © 2026 <span className="text-[#C0CAAF] opacity-80 font-bold">Devjrnl</span>
                     </span>
                 </div>
 

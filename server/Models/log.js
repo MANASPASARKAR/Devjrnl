@@ -17,6 +17,9 @@ const logSchema = new mongoose.Schema({
         type: String,
         enum: TAGS,
     }],
+    images: [{
+        type: String,
+    }],
     date: {
         type: Date,
         required: true,

@@ -1,23 +1,96 @@
 const AppError = require("../utils/appError");
 const User = require("../Models/user");
 const Log = require("../Models/log");
+const WeeklyReport = require("../Models/weeklyReport");
+const { streakCalculator } = require("../utils/streakCalculator");
+const { generateWeeklyInsight } = require("../service/insightService");
 
 const handleDashboard = async (req, res, next) => {
     try {
         const user = await User.findById(req.user._id).populate('logs');
 
+        // Recalculate dynamic streak (fixes stale streaks from inactivity)
+        const liveStreak = await streakCalculator(req.user._id);
+        if (liveStreak !== user.currentStreak) {
+            user.currentStreak = liveStreak;
+            await user.save();
+        }
+
         let dateAWeekAgo = new Date();
         dateAWeekAgo.setDate(dateAWeekAgo.getDate() - 7);
 
         const sortedLogs = user.logs.sort((a, b) => new Date(b.date) - new Date(a.date));
-        const recentLogs = sortedLogs.slice(0, 3); // 3 most recent
+        const recentLogs = sortedLogs.slice(0, 3);
+
+        // Build heatmap: { "2026-04-14": 2, ... } for the current year
+        const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+        const heatmapData = {};
+        user.logs.forEach(log => {
+            const d = new Date(log.date);
+            if (d >= startOfYear) {
+                const key = d.toISOString().split('T')[0];
+                heatmapData[key] = (heatmapData[key] || 0) + 1;
+            }
+        });
+
+        // ── Weekly Insight (lazy generation via OpenRouter) ──────────────────
+        const now = new Date();
+        const createdDay = user.createdAt ? user.createdAt.getDay() : 1; // fallback Monday
+        const todayDay = now.getDay();
+
+        // Compute the most recent occurrence of the refresh day (on or before today)
+        const daysBack = (todayDay - createdDay + 7) % 7;
+        const thisWeekStart = new Date(now); 
+        thisWeekStart.setDate(now.getDate() - daysBack);
+        thisWeekStart.setHours(0, 0, 0, 0);
+
+        // Look for an existing report for this exact week
+        let currentReport = await WeeklyReport.findOne({
+            userId: user._id,
+            weekStart: thisWeekStart,
+        });
+
+        // It's the refresh day and no report exists for this week yet — generate
+        if (!currentReport && todayDay === createdDay) {
+            const oneWeekAgo = new Date(thisWeekStart);
+            oneWeekAgo.setDate(thisWeekStart.getDate() - 7);
+            const weekLogs = user.logs.filter(l => new Date(l.date) >= oneWeekAgo);
+
+            if (weekLogs.length >= 3) {
+                try {
+                    const summaryText = await generateWeeklyInsight(weekLogs);
+                    currentReport = await WeeklyReport.create({
+                        userId: user._id,
+                        weekStart: thisWeekStart,
+                        summaryText,
+                        createdAt: now,
+                    });
+                } catch (err) {
+                    // Non-fatal — serve whatever is cached
+                    console.error("Weekly insight generation failed:", err.message);
+                }
+            }
+        }
+
+        // If not refresh day (or generation failed), serve the most recent report
+        if (!currentReport) {
+            currentReport = await WeeklyReport
+                .findOne({ userId: user._id })
+                .sort({ weekStart: -1 });
+        }
+
+        const refreshDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
         const dashboardItems = {
-            currentStreak: user.currentStreak,
+            currentStreak: liveStreak,
             longestStreak: user.longestStreak,
             totalLogs: user.logs.length,
             logsThisWeek: user.logs.filter((log) => new Date(log.date) > dateAWeekAgo).length,
             recentLogs,
+            heatmapData,
+            weeklyInsight: currentReport?.summaryText || null,
+            insightGeneratedAt: currentReport?.createdAt || null,
+            insightRefreshDay: refreshDayNames[createdDay],
         };
 
         res.status(200).json(dashboardItems);

@@ -9,3 +9,55 @@
 @keyframes blink {
   50% { opacity: 0; }
 }
+
+/* Custom styles for React MD Editor */
+.custom-md-editor-wrapper {
+  color-scheme: dark;
+}
+.custom-md-editor-wrapper .w-md-editor {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+.custom-md-editor-wrapper .w-md-editor-toolbar {
+  background-color: #0a0a0a !important;
+  border-bottom: 1px solid #1e1e1e !important;
+  border-radius: 0 !important;
+}
+.custom-md-editor-wrapper .w-md-editor-toolbar li > button {
+  color: #4AF0FF !important;
+}
+.custom-md-editor-wrapper .w-md-editor-toolbar li > button:hover {
+  background-color: #1e1e1e !important;
+  color: #39ff14 !important;
+}
+.custom-md-editor-wrapper .w-md-editor-toolbar-divider {
+  background-color: #1e1e1e !important;
+}
+.custom-md-editor-wrapper .w-md-editor-text-input,
+.custom-md-editor-wrapper .w-md-editor-text-pre > code,
+.custom-md-editor-wrapper .w-md-editor-text-pre {
+  font-family: monospace !important;
+  font-size: 14px !important;
+  line-height: 24px !important;
+  letter-spacing: normal !important;
+}
+.custom-md-editor-wrapper .w-md-editor-text-input {
+  color: #E5E2E1 !important;
+  caret-color: #A8FF3E !important;
+}
+.custom-md-editor-wrapper .w-md-editor-text {
+  padding: 1rem !important;
+}
+.custom-md-editor-wrapper .w-md-editor-preview {
+  background-color: transparent !important;
+  box-shadow: inset 1px 0 0 0 #1e1e1e !important;
+}
+/* Ensure dark mode for MD Editor */
+html {
+  --color-canvas-default: #0d0d0d !important;
+  --color-canvas-subtle: #141414 !important;
+  --color-border-default: #1e1e1e !important;
+  --color-border-muted: #1f1f1f !important;
+}
