@@ -12,8 +12,16 @@ const errorHandler = require("./middlewares/errorHandler");
 const cookieParser = require("cookie-parser");
 const app = express();
 const port = process.env.PORT || 3000;
-const clientDistPath = path.join(__dirname, "../client/dist");
+// const clientDistPath = path.join(__dirname, "../client/dist");
+const cors = require("cors")
 
+app.use(cors({
+  origin: [
+    "http://localhost:5173", 
+    "https://your-vercel-app.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -21,11 +29,11 @@ app.use("/api/auth", authRouter);
 app.use("/api/logs", logRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use(errorHandler);
-app.use(express.static(clientDistPath));
+// app.use(express.static(clientDistPath));
 
-app.get("/{*path}", (req, res) => {
-  res.sendFile(path.join(clientDistPath, "index.html"));
-});
+// app.get("/{*path}", (req, res) => {
+//   res.sendFile(path.join(clientDistPath, "index.html"));
+// });
 
 app.listen(port, () => {
   console.log(`App Listening on port ${port}`);
