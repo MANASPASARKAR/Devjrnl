@@ -13,15 +13,18 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const port = process.env.PORT || 3000;
 // const clientDistPath = path.join(__dirname, "../client/dist");
-const cors = require("cors")
+import cors from "cors";
 
 app.use(cors({
   origin: [
-    "http://localhost:5173", 
-    "https://devjrnl.vercel.app/"
+    "http://localhost:5173",
+    "https://devjrnl.vercel.app"
   ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
