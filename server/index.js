@@ -13,7 +13,7 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const port = process.env.PORT || 3000;
 // const clientDistPath = path.join(__dirname, "../client/dist");
-import cors from "cors";
+const cors = require("cors");
 
 app.use(cors({
   origin: [
