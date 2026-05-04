@@ -28,7 +28,7 @@ export default function Log() {
     useEffect(() => {
         const fetchLog = async () => {
             try {
-                const res = await axios.get(`/api/logs/${id}`);
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/logs/${id}`);
                 setLog(res.data);
             } catch (err) {
                 setError(err.response?.data?.message || err.message || "Failed to load log.");
@@ -43,7 +43,7 @@ export default function Log() {
         if (!confirmDelete) { setConfirmDelete(true); return; }
         setDeleting(true);
         try {
-            await axios.delete(`/api/logs/${id}`);
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/logs/${id}`);
             navigate("/logs", { state: { successMessage: "LOG_PURGED_SUCCESSFULLY" } });
         } catch (err) {
             setError(err.response?.data?.message || "Delete failed.");

@@ -31,7 +31,7 @@ export default function ResetPassword() {
         setMessage("");
 
         try {
-            const res = await fetch(`/api/auth/reset-password/${token}`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/reset-password/${token}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ password }),

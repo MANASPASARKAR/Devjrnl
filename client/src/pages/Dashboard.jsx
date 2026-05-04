@@ -66,7 +66,7 @@ export default function Dashboard() {
     useEffect(() => {
         const fetchDashboard = async () => {
             try {
-                const response = await axios.get("/api/dashboard");
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/dashboard`);
                 setDashboardData(response.data);
             } catch (err) {
                 console.error("Failed to fetch dashboard data", err);

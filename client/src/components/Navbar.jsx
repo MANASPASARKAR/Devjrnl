@@ -16,7 +16,7 @@ export default function Navbar() {
 
         const fetchDailyLimit = async () => {
             try {
-                const response = await axios.get("/api/logs");
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/logs`);
                 setDailyLimitReached(hasReachedDailyLogLimit(response.data || []));
             } catch {
                 setDailyLimitReached(false);
@@ -27,7 +27,7 @@ export default function Navbar() {
     }, [isLoggedIn, location.pathname]);
 
     const SignOut = async () => {
-        await axios.post("/api/auth/logout");
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/logout`);
         localStorage.removeItem('username');
         navigate('/login');
     }

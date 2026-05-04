@@ -33,7 +33,7 @@ export default function Logs() {
     useEffect(() => {
         const fetchLogs = async () => {
             try {
-                const response = await axios.get("/api/logs", {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/logs`, {
                     params: {
                         search: search || undefined,
                         tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,

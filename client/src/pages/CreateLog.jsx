@@ -21,7 +21,7 @@ export default function CreateLog() {
     useEffect(() => {
         const checkDailyLimit = async () => {
             try {
-                const response = await axios.get("/api/logs");
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/logs`);
                 if (hasReachedDailyLogLimit(response.data || [])) {
                     setDailyLimitReached(true);
                     setError(DAILY_LOG_LIMIT_ERROR);
@@ -76,7 +76,7 @@ export default function CreateLog() {
             formData.append("tags", JSON.stringify(selectedTags));
             images.forEach(img => formData.append("images", img));
 
-            await axios.post("/api/logs/", formData, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/logs/`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             navigate('/logs', { state: { successMessage: "LOG_STORED_SUCCESSFULLY" } });

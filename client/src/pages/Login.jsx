@@ -31,7 +31,7 @@ export default function Login() {
         setIsLoading(true);
         try {
             if (!identifier || !password) throw new Error("identifier and password are required");
-            const response = await axios.post("/api/auth/login", { identifier, password });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, { identifier, password });
             localStorage.setItem('username', response.data.username)
             navigate('/dashboard', { state: { successMessage: "AUTHENTICATION_SUCCESSFUL" } });
         } catch (err) {
@@ -46,7 +46,7 @@ export default function Login() {
             setError("");
             setIsLoading(true);
             try {
-                const response = await axios.post("/api/auth/google", { access_token: tokenResponse.access_token });
+                const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google`, { access_token: tokenResponse.access_token });
                 localStorage.setItem('username', response.data.username);
                 navigate('/dashboard', { state: { successMessage: "AUTHENTICATION_SUCCESSFUL" } });
             } catch (err) {

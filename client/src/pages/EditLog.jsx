@@ -23,7 +23,7 @@ export default function EditLog() {
     useEffect(() => {
         const fetchLog = async () => {
             try {
-                const response = await axios.get(`/api/logs/${id}`);
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/logs/${id}`);
                 setTitle(response.data.title);
                 setContent(response.data.content);
                 setSelectedTags(response.data.tags);
@@ -72,7 +72,7 @@ export default function EditLog() {
             formData.append("deletedImages", JSON.stringify(deletedImages));
             newImages.forEach(img => formData.append("images", img));
 
-            await axios.put(`/api/logs/${id}`, formData, {
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/logs/${id}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             navigate(`/logs/${id}`, { state: { successMessage: "LOG_UPDATED_SUCCESSFULLY" } });

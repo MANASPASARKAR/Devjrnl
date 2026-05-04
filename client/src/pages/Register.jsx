@@ -54,7 +54,7 @@ export default function Register() {
                 name,
             }
 
-            const response = await axios.post("/api/auth/register", body);
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, body);
             console.log(response.data);
             localStorage.setItem('username', response.data.username)
             navigate('/dashboard', { state: { successMessage: "REGISTRATION_SUCCESSFUL" } });
@@ -75,7 +75,7 @@ export default function Register() {
             setError("");
             setIsLoading(true);
             try {
-                const response = await axios.post("/api/auth/google", { access_token: tokenResponse.access_token });
+                const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google`, { access_token: tokenResponse.access_token });
                 localStorage.setItem('username', response.data.username);
                 navigate('/dashboard', { state: { successMessage: "REGISTRATION_SUCCESSFUL" } });
             } catch (err) {
