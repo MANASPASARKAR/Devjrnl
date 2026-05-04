@@ -34,6 +34,12 @@ app.use(errorHandler);
 // app.get("/{*path}", (req, res) => {
 //   res.sendFile(path.join(clientDistPath, "index.html"));
 // });
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    message: "Server is running"
+  });
+});
 
 app.listen(port, () => {
   console.log(`App Listening on port ${port}`);
