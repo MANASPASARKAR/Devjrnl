@@ -42,6 +42,8 @@ const handleRegister = async (req, res, next) => {
     res.cookie("uid", token, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: true,
+      sameSite: "None"
     });
     res.status(201).json({ message: 'Account created', username: username })
   } catch (err) {
@@ -77,6 +79,8 @@ const handleLogin = async (req, res, next) => {
     res.cookie("uid", token, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: true,
+      sameSite: "None"
     });
     res.status(200).json({ message: 'Login successful', username: user.username })
   } catch (err) {
@@ -259,6 +263,8 @@ const handleGoogleAuth = async (req, res, next) => {
     res.cookie("uid", authToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: true,
+      sameSite: "None"
     });
 
     res.status(200).json({ message: 'Google Auth successful', username: user.username });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import axios from "axios"
+import axios from "../api/axios"
 import ErrorAlert from "../components/ErrorAlert"
 import SuccessAlert from "../components/SuccessAlert"
 import ReactMarkdown from "react-markdown"

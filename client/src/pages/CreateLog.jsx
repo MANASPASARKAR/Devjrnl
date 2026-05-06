@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import axios from "axios"
+import axios from "../api/axios"
 import TAGS from "../constants/tags"
 import { useNavigate } from "react-router-dom"
 import ErrorAlert from "../components/ErrorAlert"
