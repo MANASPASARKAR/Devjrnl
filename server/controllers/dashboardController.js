@@ -55,16 +55,6 @@ const handleDashboard = async (req, res, next) => {
         oneWeekAgo.setDate(thisWeekStart.getDate() - 7);
         const weekLogsForInsight = user.logs.filter(l => new Date(l.date) >= oneWeekAgo);
 
-        // DEBUG — remove after testing
-        console.log("── Weekly Insight Debug ──");
-        console.log("  user.createdAt:", user.createdAt);
-        console.log("  createdDay:", createdDay, "todayDay:", todayDay);
-        console.log("  thisWeekStart:", thisWeekStart.toISOString());
-        console.log("  oneWeekAgo:", oneWeekAgo.toISOString());
-        console.log("  weekLogsForInsight count:", weekLogsForInsight.length);
-        console.log("  existingReport:", !!currentReport);
-        console.log("  isRefreshDay:", todayDay === createdDay);
-
         let insightStatus = null; // will tell frontend WHY insight is missing
 
         // It's the refresh day and no report exists for this week yet — generate

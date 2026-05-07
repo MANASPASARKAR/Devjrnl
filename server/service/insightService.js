@@ -19,34 +19,32 @@ async function generateWeeklyInsight(logs) {
 
     const prompt = `Generate a weekly summary and actionable insights for a developer based on their log entries.
 
-The goal is to provide a comprehensive overview of the developer's week, highlighting their accomplishments and areas for improvement, delivered in a human and technically informed tone.
-
 # Input Data
 
-You will be provided with the developer's log entries below:
+Developer log entries for the week:
 ${logSummaries}
-
-# Steps
-
-1.  **Analyze Log Entries**: Carefully review all provided log entries to identify key themes, topics, technologies, and tasks.
-2.  **Synthesize "What was done"**: Consolidate the analyzed information into a cohesive narrative detailing what the developer accomplished this week.
-3.  **Synthesize "What can be done more"**: Identify areas for potential improvement, new concepts to explore, or actionable advice for the upcoming week based on their current trajectory.
 
 # Output Format
 
-The output MUST be formatted in Markdown with exactly two sections using H3 (###) headers:
+Output MUST be valid Markdown with exactly two sections. Use bold H3 headers exactly as shown:
 
-### What was done
-(Your 1-3 paragraphs of flowing prose summarizing their achievements. Be specific to the technologies and tasks in their logs. Do NOT use bullet points.)
+### **What was done**
+- A concise bullet point about a specific accomplishment
+- Another bullet point about a distinct task or feature
+- (3–6 bullets total, each 1–2 sentences max)
 
-### What can be done more
-(Your 1-3 paragraphs of flowing prose offering actionable advice, forward-looking suggestions, and areas for improvement. Do NOT use bullet points.)
+### **What can be done more**
+- A concise actionable suggestion
+- Another forward-looking improvement
+- (3–5 bullets total, each 1–2 sentences max)
 
 # Rules
-* The total length should be around 300 to 400 words.
-* Flowing prose only — no bullet points, no lists.
+* Use ONLY bullet points under each section — no paragraphs, no prose blocks.
+* Each bullet must be specific to what was actually in the logs. No generic advice.
+* Keep the entire output under 300 words.
 * Technical but human in tone.
-* Be highly specific to what was actually logged, not generic.`;
+* Do NOT add any text outside the two sections.
+*refer to the developer as 'you' and speak accordingly to them`;
 
 
 

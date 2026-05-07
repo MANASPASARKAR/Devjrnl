@@ -226,7 +226,7 @@ export default function Dashboard() {
                                 <p className="text-[10px] text-[#4af0ff] tracking-[0.3em] uppercase mb-4">
                                     &gt; ANALYSIS_OUTPUT
                                 </p>
-                                <div className="text-gray-300 text-sm leading-relaxed prose prose-invert max-w-none prose-h3:text-[#39ff14] prose-h3:text-xs prose-h3:tracking-widest prose-h3:uppercase prose-h3:mb-2 prose-h3:mt-6 prose-p:mb-4">
+                                <div className="text-gray-300 text-sm leading-relaxed prose prose-invert max-w-none prose-h3:text-[#39ff14] prose-h3:font-black prose-h3:text-sm prose-h3:tracking-widest prose-h3:uppercase prose-h3:mb-3 prose-h3:mt-8 prose-h3:border-b prose-h3:border-[#1f1f1f] prose-h3:pb-1 prose-li:my-1.5 prose-ul:my-3 prose-strong:text-[#4af0ff]">
                                     <ReactMarkdown>
                                         {dashboardData.weeklyInsight}
                                     </ReactMarkdown>
