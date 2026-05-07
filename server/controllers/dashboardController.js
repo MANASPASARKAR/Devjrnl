@@ -80,7 +80,10 @@ const handleDashboard = async (req, res, next) => {
                     });
                 } catch (err) {
                     // Non-fatal — serve whatever is cached
-                    console.error("Weekly insight generation failed:", err.message);
+                    const detail = err.response
+                        ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                        : err.message;
+                    console.error("Weekly insight generation failed:", detail);
                     insightStatus = "generation_failed";
                 }
             } else {

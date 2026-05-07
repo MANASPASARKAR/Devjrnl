@@ -52,6 +52,10 @@ The output MUST be formatted in Markdown with exactly two sections using H3 (###
 
 
 
+    if (!process.env.OPENROUTER_API_KEY) {
+        throw new Error("OPENROUTER_API_KEY is not set in environment variables");
+    }
+
     const response = await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
         {
