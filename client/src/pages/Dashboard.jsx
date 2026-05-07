@@ -240,7 +240,13 @@ export default function Dashboard() {
                         ) : (
                             <div className="min-h-[80px] flex items-center justify-center">
                                 <p className="text-gray-600 text-xs tracking-widest uppercase">
-                                // minimum 3 logs required this week to generate insight
+                                {dashboardData.insightStatus === "not_refresh_day"
+                                    ? `// NEXT INSIGHT GENERATES ON ${dashboardData.insightRefreshDay?.toUpperCase()} — ${dashboardData.weekLogsCount || 0}/3 LOGS READY`
+                                    : dashboardData.insightStatus === "not_enough_logs"
+                                    ? `// MINIMUM 3 LOGS REQUIRED — CURRENT: ${dashboardData.weekLogsCount || 0}`
+                                    : dashboardData.insightStatus === "generation_failed"
+                                    ? "// INSIGHT GENERATION FAILED — WILL RETRY NEXT REFRESH"
+                                    : "// MINIMUM 3 LOGS REQUIRED THIS WEEK TO GENERATE INSIGHT"}
                                 </p>
                             </div>
                         )}

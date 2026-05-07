@@ -28,6 +28,7 @@ let userSchema = new mongoose.Schema({
     },
     createdAt: {
         type: Date,
+        default: Date.now,
     },
     currentStreak: {
         type: Number,

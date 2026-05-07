@@ -50,15 +50,28 @@ const handleDashboard = async (req, res, next) => {
             weekStart: thisWeekStart,
         });
 
+        // Compute log count for insight regardless of day (for status reporting)
+        const oneWeekAgo = new Date(thisWeekStart);
+        oneWeekAgo.setDate(thisWeekStart.getDate() - 7);
+        const weekLogsForInsight = user.logs.filter(l => new Date(l.date) >= oneWeekAgo);
+
+        // DEBUG — remove after testing
+        console.log("── Weekly Insight Debug ──");
+        console.log("  user.createdAt:", user.createdAt);
+        console.log("  createdDay:", createdDay, "todayDay:", todayDay);
+        console.log("  thisWeekStart:", thisWeekStart.toISOString());
+        console.log("  oneWeekAgo:", oneWeekAgo.toISOString());
+        console.log("  weekLogsForInsight count:", weekLogsForInsight.length);
+        console.log("  existingReport:", !!currentReport);
+        console.log("  isRefreshDay:", todayDay === createdDay);
+
+        let insightStatus = null; // will tell frontend WHY insight is missing
+
         // It's the refresh day and no report exists for this week yet — generate
         if (!currentReport && todayDay === createdDay) {
-            const oneWeekAgo = new Date(thisWeekStart);
-            oneWeekAgo.setDate(thisWeekStart.getDate() - 7);
-            const weekLogs = user.logs.filter(l => new Date(l.date) >= oneWeekAgo);
-
-            if (weekLogs.length >= 3) {
+            if (weekLogsForInsight.length >= 3) {
                 try {
-                    const summaryText = await generateWeeklyInsight(weekLogs);
+                    const summaryText = await generateWeeklyInsight(weekLogsForInsight);
                     currentReport = await WeeklyReport.create({
                         userId: user._id,
                         weekStart: thisWeekStart,
@@ -68,8 +81,15 @@ const handleDashboard = async (req, res, next) => {
                 } catch (err) {
                     // Non-fatal — serve whatever is cached
                     console.error("Weekly insight generation failed:", err.message);
+                    insightStatus = "generation_failed";
                 }
+            } else {
+                insightStatus = "not_enough_logs";
             }
+        } else if (currentReport) {
+            insightStatus = "ready";
+        } else if (todayDay !== createdDay) {
+            insightStatus = "not_refresh_day";
         }
 
         // If not refresh day (or generation failed), serve the most recent report
@@ -77,6 +97,7 @@ const handleDashboard = async (req, res, next) => {
             currentReport = await WeeklyReport
                 .findOne({ userId: user._id })
                 .sort({ weekStart: -1 });
+            if (currentReport) insightStatus = "showing_previous";
         }
 
         const refreshDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -97,6 +118,8 @@ const handleDashboard = async (req, res, next) => {
             weeklyInsight: currentReport?.summaryText || null,
             insightGeneratedAt: currentReport?.createdAt || null,
             insightRefreshDay: refreshDayNames[createdDay],
+            insightStatus,
+            weekLogsCount: weekLogsForInsight.length,
         };
 
         res.status(200).json(dashboardItems);
