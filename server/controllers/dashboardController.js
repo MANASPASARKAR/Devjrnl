@@ -81,11 +81,17 @@ const handleDashboard = async (req, res, next) => {
 
         const refreshDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+        const logsThisWeek = user.logs.filter((log) => new Date(log.date) > dateAWeekAgo);
+        const activeDaysThisWeek = new Set(
+            logsThisWeek.map((log) => new Date(log.date).toISOString().split('T')[0])
+        ).size;
+
         const dashboardItems = {
             currentStreak: liveStreak,
             longestStreak: user.longestStreak,
             totalLogs: user.logs.length,
-            logsThisWeek: user.logs.filter((log) => new Date(log.date) > dateAWeekAgo).length,
+            logsThisWeek: logsThisWeek.length,
+            activeDaysThisWeek,
             recentLogs,
             heatmapData,
             weeklyInsight: currentReport?.summaryText || null,

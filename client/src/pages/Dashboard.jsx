@@ -182,8 +182,7 @@ export default function Dashboard() {
                             <div>
                                 <p className="text-[#4af0ff] text-[10px] tracking-widest uppercase mb-4">ACTIVE DAYS</p>
                                 <span className="text-white text-4xl font-black tracking-tighter leading-none">
-                                    {/* Assuming we don't have this exact data point yet, rendering a placeholder calculation or value */}
-                                    {Math.min(dashboardData.logsThisWeek || 0, 7)}/7
+                                    {dashboardData.activeDaysThisWeek || 0}/7
                                 </span>
                             </div>
                             <div className="text-gray-600 text-[9px] tracking-widest uppercase mt-4 flex items-center gap-1">
