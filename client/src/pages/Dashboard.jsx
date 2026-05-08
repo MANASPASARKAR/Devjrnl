@@ -229,7 +229,7 @@ export default function Dashboard() {
                                         : `refreshes every 7 days`}
                                 </span>
                                 <span className="text-[#4af0ff] border border-[#4af0ff] bg-[#4af0ff]/10 px-2 py-0.5 text-[8px] tracking-[0.2em] uppercase">
-                                    GEMMA_3_12B
+                                    GPT_OSS_20B
                                 </span>
                             </div>
                         </div>
