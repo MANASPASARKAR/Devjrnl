@@ -57,7 +57,7 @@ Output MUST be valid Markdown with exactly two sections. Use bold H3 headers exa
     const response = await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
         {
-            model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+            model: "google/gemma-3-12b-it:free",
             messages: [
                 {
                     role: "user",

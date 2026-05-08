@@ -4,12 +4,14 @@ import axios from "../api/axios"
 import ErrorAlert from "../components/ErrorAlert"
 import SuccessAlert from "../components/SuccessAlert"
 import ReactMarkdown from "react-markdown"
+import PageLoader from "../components/PageLoader"
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const location = useLocation();
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showLoader, setShowLoader] = useState(false);
     const [fetchError, setFetchError] = useState(false);
     const [username, setUsername] = useState("USER");
     const [tooltip, setTooltip] = useState(null); // { date, count, x, y }
@@ -64,6 +66,9 @@ export default function Dashboard() {
     // ────────────────────────────────────────────────────────────────────────
 
     useEffect(() => {
+        // Only show the loader if fetch takes longer than 1 second
+        const loaderTimer = setTimeout(() => setShowLoader(true), 1000);
+
         const fetchDashboard = async () => {
             try {
                 const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/dashboard`);
@@ -72,6 +77,7 @@ export default function Dashboard() {
                 console.error("Failed to fetch dashboard data", err);
                 setFetchError(true);
             } finally {
+                clearTimeout(loaderTimer);
                 setLoading(false);
             }
         };
@@ -81,15 +87,17 @@ export default function Dashboard() {
         if (storedUser) {
             setUsername(storedUser.toUpperCase());
         }
+
+        return () => clearTimeout(loaderTimer);
     }, [])
 
     const redirectToLogs = () => {
         navigate('/logs');
     }
 
-    // While fetching — render nothing (blank dark screen)
+    // While fetching — show loader only after 1s has passed
     if (loading) {
-        return <div className="min-h-screen bg-[#0a0a0a]" />;
+        return showLoader ? <PageLoader /> : <div className="min-h-screen bg-[#0a0a0a]" />;
     }
 
     // Fetch completed but failed
@@ -216,7 +224,7 @@ export default function Dashboard() {
                                     refreshes every {dashboardData.insightRefreshDay}
                                 </span>
                                 <span className="text-[#4af0ff] border border-[#4af0ff] bg-[#4af0ff]/10 px-2 py-0.5 text-[8px] tracking-[0.2em] uppercase">
-                                    NEMOTRON_NANO_OMNI
+                                    GEMMA_3_12B
                                 </span>
                             </div>
                         </div>
