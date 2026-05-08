@@ -16,6 +16,9 @@ const weeklyReportSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
   },
+  periodStart: {
+    type: Date,    // exact start of the log window used for this report
+  },
   shareToken: {
     type: String,
   },

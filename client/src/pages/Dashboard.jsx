@@ -221,7 +221,12 @@ export default function Dashboard() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className="text-gray-600 text-[9px] tracking-widest uppercase">
-                                    refreshes every {dashboardData.insightRefreshDay}
+                                    {dashboardData.insightNextRefresh
+                                        ? (() => {
+                                            const days = Math.ceil((new Date(dashboardData.insightNextRefresh) - Date.now()) / 86400000);
+                                            return days > 0 ? `next refresh in ${days}d` : `refresh due`;
+                                        })()
+                                        : `refreshes every 7 days`}
                                 </span>
                                 <span className="text-[#4af0ff] border border-[#4af0ff] bg-[#4af0ff]/10 px-2 py-0.5 text-[8px] tracking-[0.2em] uppercase">
                                     GEMMA_3_12B
@@ -240,20 +245,34 @@ export default function Dashboard() {
                                     </ReactMarkdown>
                                 </div>
                                 {dashboardData.insightGeneratedAt && (
-                                    <p className="text-gray-600 text-[9px] tracking-widest uppercase mt-5 border-t border-[#1f1f1f] pt-3">
-                                        Generated: {new Date(dashboardData.insightGeneratedAt).toDateString()}
-                                    </p>
+                                    <div className="mt-5 border-t border-[#1f1f1f] pt-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                                        <p className="text-gray-600 text-[9px] tracking-widest uppercase">
+                                            {(() => {
+                                                const start = dashboardData.insightPeriodStart
+                                                    ? new Date(dashboardData.insightPeriodStart)
+                                                    : new Date(new Date(dashboardData.insightGeneratedAt).getTime() - 7 * 24 * 60 * 60 * 1000);
+                                                const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+                                                const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+                                                return `> REPORT COVERS: ${fmt(start)} — ${fmt(end)}`;
+                                            })()}
+                                        </p>
+                                        {dashboardData.insightNextRefresh && (
+                                            <p className="text-[#39ff14] text-[9px] tracking-widest uppercase">
+                                                {`> NEXT REPORT: ${new Date(dashboardData.insightNextRefresh).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}`}
+                                            </p>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         ) : (
                             <div className="min-h-[80px] flex items-center justify-center">
                                 <p className="text-gray-600 text-xs tracking-widest uppercase">
-                                {dashboardData.insightStatus === "not_refresh_day"
-                                    ? `// NEXT INSIGHT GENERATES ON ${dashboardData.insightRefreshDay?.toUpperCase()} — ${dashboardData.weekLogsCount || 0}/3 LOGS READY`
-                                    : dashboardData.insightStatus === "not_enough_logs"
-                                    ? `// MINIMUM 3 LOGS REQUIRED — CURRENT: ${dashboardData.weekLogsCount || 0}`
+                                {dashboardData.insightStatus === "not_enough_logs"
+                                    ? `// MINIMUM 3 LOGS REQUIRED THIS WEEK — CURRENT: ${dashboardData.weekLogsCount || 0}/3`
                                     : dashboardData.insightStatus === "generation_failed"
                                     ? "// INSIGHT GENERATION FAILED — WILL RETRY NEXT REFRESH"
+                                    : dashboardData.insightStatus === "not_yet_due"
+                                    ? `// FIRST INSIGHT UNLOCKS ${dashboardData.insightNextRefresh ? new Date(dashboardData.insightNextRefresh).toDateString().toUpperCase() : "AFTER 7 DAYS"}`
                                     : "// MINIMUM 3 LOGS REQUIRED THIS WEEK TO GENERATE INSIGHT"}
                                 </p>
                             </div>

@@ -33,43 +33,58 @@ const handleDashboard = async (req, res, next) => {
             }
         });
 
-        // ── Weekly Insight (lazy generation via OpenRouter) ──────────────────
+        // ── Weekly Insight (rolling 7-day cycle) ──────────────────────────────
         const now = new Date();
-        const createdDay = user.createdAt ? user.createdAt.getDay() : 1; // fallback Monday
-        const todayDay = now.getDay();
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-        // Compute the most recent occurrence of the refresh day (on or before today)
-        const daysBack = (todayDay - createdDay + 7) % 7;
-        const thisWeekStart = new Date(now); 
-        thisWeekStart.setDate(now.getDate() - daysBack);
-        thisWeekStart.setHours(0, 0, 0, 0);
+        // Always work with the most recent report for this user
+        const latestReport = await WeeklyReport
+            .findOne({ userId: user._id })
+            .sort({ weekStart: -1 });
 
-        // Look for an existing report for this exact week
-        let currentReport = await WeeklyReport.findOne({
-            userId: user._id,
-            weekStart: thisWeekStart,
-        });
+        let currentReport = latestReport;
+        let insightStatus = null;
+        let insightNextRefresh = null;
 
-        // Compute log count for insight regardless of day (for status reporting)
-        const oneWeekAgo = new Date(thisWeekStart);
-        oneWeekAgo.setDate(thisWeekStart.getDate() - 7);
-        const weekLogsForInsight = user.logs.filter(l => new Date(l.date) >= oneWeekAgo);
+        const lastGeneratedAt = latestReport ? new Date(latestReport.weekStart) : null;
 
-        let insightStatus = null; // will tell frontend WHY insight is missing
+        // First insight: only after account is 7 days old
+        // Subsequent insights: 7 days after the last report was generated
+        const firstInsightUnlockDate = user.createdAt
+            ? new Date(new Date(user.createdAt).getTime() + SEVEN_DAYS_MS)
+            : new Date(0); // if no createdAt somehow, allow immediately
 
-        // It's the refresh day and no report exists for this week yet — generate
-        if (!currentReport && todayDay === createdDay) {
-            if (weekLogsForInsight.length >= 3) {
+        const isDue = lastGeneratedAt
+            ? (now - lastGeneratedAt) >= SEVEN_DAYS_MS          // rolling cycle
+            : now >= firstInsightUnlockDate;                     // first time: 7 days after signup
+
+        if (isDue) {
+            // Period start = last report date (or createdAt for first report)
+            const periodStart = lastGeneratedAt
+                ? lastGeneratedAt
+                : (user.createdAt ? new Date(user.createdAt) : new Date(now.getTime() - SEVEN_DAYS_MS));
+
+            // Always exactly 7 days — regardless of how late the user logs in
+            const periodEnd = new Date(periodStart.getTime() + SEVEN_DAYS_MS);
+
+            const weekLogs = user.logs.filter(l => {
+                const d = new Date(l.date);
+                return d >= periodStart && d <= periodEnd;
+            });
+
+            if (weekLogs.length >= 3) {
                 try {
-                    const summaryText = await generateWeeklyInsight(weekLogsForInsight);
+                    const summaryText = await generateWeeklyInsight(weekLogs);
                     currentReport = await WeeklyReport.create({
                         userId: user._id,
-                        weekStart: thisWeekStart,
+                        weekStart: now,         // next report due 7 days from this login
                         summaryText,
                         createdAt: now,
+                        periodStart,
                     });
+                    insightStatus = "ready";
+                    insightNextRefresh = new Date(now.getTime() + SEVEN_DAYS_MS);
                 } catch (err) {
-                    // Non-fatal — serve whatever is cached
                     const detail = err.response
                         ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
                         : err.message;
@@ -80,25 +95,23 @@ const handleDashboard = async (req, res, next) => {
                 insightStatus = "not_enough_logs";
             }
         } else if (currentReport) {
-            insightStatus = "ready";
-        } else if (todayDay !== createdDay) {
-            insightStatus = "not_refresh_day";
+            insightStatus = lastGeneratedAt ? "ready" : "showing_previous";
+            insightNextRefresh = new Date(lastGeneratedAt.getTime() + SEVEN_DAYS_MS);
+        } else {
+            // No report yet, not due yet — show when the first one will unlock
+            insightStatus = "not_yet_due";
+            insightNextRefresh = firstInsightUnlockDate;
         }
-
-        // If not refresh day (or generation failed), serve the most recent report
-        if (!currentReport) {
-            currentReport = await WeeklyReport
-                .findOne({ userId: user._id })
-                .sort({ weekStart: -1 });
-            if (currentReport) insightStatus = "showing_previous";
-        }
-
-        const refreshDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
         const logsThisWeek = user.logs.filter((log) => new Date(log.date) > dateAWeekAgo);
         const activeDaysThisWeek = new Set(
             logsThisWeek.map((log) => new Date(log.date).toISOString().split('T')[0])
         ).size;
+
+        // How many logs since the last report (for status reporting — matches the actual filter)
+        const countPeriodStart = lastGeneratedAt
+            || (user.createdAt ? new Date(user.createdAt) : new Date(now.getTime() - SEVEN_DAYS_MS));
+        const weekLogsCount = user.logs.filter(l => new Date(l.date) >= countPeriodStart).length;
 
         const dashboardItems = {
             currentStreak: liveStreak,
@@ -110,9 +123,10 @@ const handleDashboard = async (req, res, next) => {
             heatmapData,
             weeklyInsight: currentReport?.summaryText || null,
             insightGeneratedAt: currentReport?.createdAt || null,
-            insightRefreshDay: refreshDayNames[createdDay],
+            insightPeriodStart: currentReport?.periodStart || null,  // exact start of the log window
+            insightNextRefresh,   // ISO date of when next report will generate
             insightStatus,
-            weekLogsCount: weekLogsForInsight.length,
+            weekLogsCount,
         };
 
         res.status(200).json(dashboardItems);
