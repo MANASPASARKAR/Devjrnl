@@ -21,8 +21,6 @@ export default function CreateLog() {
     const [images, setImages] = useState([]);
     const { loading, setLoading, showLoader } = useDelayedLoader();
 
-    if (loading) return showLoader ? <PageLoader label="LOADING ENTRY" /> : <div className="min-h-screen bg-[#0a0a0a]" />;
-
     useEffect(() => {
         const checkDailyLimit = async () => {
             try {
@@ -99,6 +97,8 @@ export default function CreateLog() {
     const today = new Date().toISOString().split('T')[0];
     const displayTags = showAllTags ? TAGS : TAGS.slice(0, 10);
     const formDisabled = dailyLimitReached || error !== "" || isLoading;
+
+    if (loading) return showLoader ? <PageLoader label="LOADING ENTRY" /> : <div className="min-h-screen bg-[#0a0a0a]" />;
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] font-mono p-4 flex flex-col">

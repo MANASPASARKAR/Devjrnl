@@ -23,8 +23,6 @@ export default function EditLog() {
     const [newImages, setNewImages]           = useState([]);
     const { loading, setLoading, showLoader } = useDelayedLoader();
 
-    if (loading) return showLoader ? <PageLoader label="LOADING ENTRY" /> : <div className="min-h-screen bg-[#0a0a0a]" />;
-
     useEffect(() => {
         const fetchLog = async () => {
             try {
@@ -90,6 +88,8 @@ export default function EditLog() {
         }
     };
     const handleDiscard = () => navigate(`/logs/${id}`);
+
+    if (loading) return showLoader ? <PageLoader label="LOADING ENTRY" /> : <div className="min-h-screen bg-[#0a0a0a]" />;
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] font-mono p-4 flex flex-col">
