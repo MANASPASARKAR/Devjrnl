@@ -4,6 +4,8 @@ import TAGS from "../constants/tags"
 import ErrorAlert from "../components/ErrorAlert"
 import SuccessAlert from "../components/SuccessAlert"
 import { useNavigate, useLocation } from "react-router-dom"
+import PageLoader from "../components/PageLoader"
+import useDelayedLoader from "../utils/useDelayedLoader"
 
 function formatDate(raw) {
     if (!raw) return "—";
@@ -20,7 +22,8 @@ export default function Logs() {
     let [showAllTags, setShowAllTags] = useState(false);
     let [showAllLogs, setShowAllLogs] = useState(false);
     let [error, setError]             = useState("");
-    let [loading, setLoading]         = useState(true);
+    const { loading, setLoading, showLoader } = useDelayedLoader();
+    const [isFetching, setIsFetching] = useState(false);
     const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || "");
 
     const dismissSuccess = () => {
@@ -32,6 +35,7 @@ export default function Logs() {
 
     useEffect(() => {
         const fetchLogs = async () => {
+            setIsFetching(true);
             try {
                 const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/logs`, {
                     params: {
@@ -50,10 +54,13 @@ export default function Logs() {
             } finally {
                 setSearched(false);
                 setLoading(false);
+                setIsFetching(false);
             }
         };
         fetchLogs();
     }, [searched]);
+
+    if (loading) return showLoader ? <PageLoader label="LOADING LOGS" /> : <div className="min-h-screen bg-[#0e0e0e]" />;
 
     const handleChange    = (e) => setSearch(e.target.value);
     const handleSubmit    = (e) => { e.preventDefault(); setSearched(true); };
@@ -146,12 +153,17 @@ export default function Logs() {
             </div>
 
             {/* ── Error ── */}
-            {error && (
+            {error && !isFetching && (
                 <ErrorAlert error={error} onClose={() => setError("")} />
             )}
 
             {/* ── Log cards / Empty states ── */}
-            {!loading && logs.length === 0 && !isFiltering ? (
+            {isFetching ? (
+                <div className="flex flex-col items-center justify-center py-32 gap-4">
+                    <div className="w-8 h-8 border-2 border-t-[#39ff14] border-r-[#2a2a2a] border-b-[#39ff14] border-l-[#2a2a2a] rounded-full animate-spin"></div>
+                    <p className="text-[#39ff14] text-xs tracking-widest uppercase animate-pulse mt-2">SEARCHING_LOGS...</p>
+                </div>
+            ) : !loading && logs.length === 0 && !isFiltering ? (
                 <div className="flex flex-col items-center justify-center py-32 gap-4">
                     <span className="text-5xl">📭</span>
                     <p className="text-[#39ff14] text-sm tracking-widest uppercase">// no logs yet</p>

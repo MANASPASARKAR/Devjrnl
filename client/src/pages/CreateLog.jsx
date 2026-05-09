@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom"
 import ErrorAlert from "../components/ErrorAlert"
 import MDEditor from "@uiw/react-md-editor"
 import { DAILY_LOG_LIMIT_ERROR, hasReachedDailyLogLimit } from "../utils/logLimits"
+import PageLoader from "../components/PageLoader"
+import useDelayedLoader from "../utils/useDelayedLoader"
 
 export default function CreateLog() {
     const navigate = useNavigate();
@@ -17,6 +19,9 @@ export default function CreateLog() {
     const [dailyLimitReached, setDailyLimitReached] = useState(false);
 
     const [images, setImages] = useState([]);
+    const { loading, setLoading, showLoader } = useDelayedLoader();
+
+    if (loading) return showLoader ? <PageLoader label="LOADING ENTRY" /> : <div className="min-h-screen bg-[#0a0a0a]" />;
 
     useEffect(() => {
         const checkDailyLimit = async () => {
@@ -28,6 +33,8 @@ export default function CreateLog() {
                 }
             } catch (err) {
                 setError(err.response?.data?.message || err.message);
+            } finally {
+                setLoading(false);
             }
         };
 

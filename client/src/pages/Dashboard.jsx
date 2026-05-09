@@ -5,13 +5,13 @@ import ErrorAlert from "../components/ErrorAlert"
 import SuccessAlert from "../components/SuccessAlert"
 import ReactMarkdown from "react-markdown"
 import PageLoader from "../components/PageLoader"
+import useDelayedLoader from "../utils/useDelayedLoader"
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const location = useLocation();
     const [dashboardData, setDashboardData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [showLoader, setShowLoader] = useState(false);
+    const { loading, setLoading, showLoader } = useDelayedLoader();
     const [fetchError, setFetchError] = useState(false);
     const [username, setUsername] = useState("USER");
     const [tooltip, setTooltip] = useState(null); // { date, count, x, y }
@@ -66,9 +66,6 @@ export default function Dashboard() {
     // ────────────────────────────────────────────────────────────────────────
 
     useEffect(() => {
-        // Only show the loader if fetch takes longer than 1 second
-        const loaderTimer = setTimeout(() => setShowLoader(true), 1000);
-
         const fetchDashboard = async () => {
             try {
                 const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/dashboard`);
@@ -77,7 +74,6 @@ export default function Dashboard() {
                 console.error("Failed to fetch dashboard data", err);
                 setFetchError(true);
             } finally {
-                clearTimeout(loaderTimer);
                 setLoading(false);
             }
         };
@@ -87,8 +83,6 @@ export default function Dashboard() {
         if (storedUser) {
             setUsername(storedUser.toUpperCase());
         }
-
-        return () => clearTimeout(loaderTimer);
     }, [])
 
     const redirectToLogs = () => {

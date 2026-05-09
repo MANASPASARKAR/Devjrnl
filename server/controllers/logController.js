@@ -183,7 +183,13 @@ const getLogs = async (req, res, next) => {
         };
 
         if (search) {
-            searchObj = { ...searchObj, content: { $regex: search, $options: "i" } };
+            searchObj = {
+                ...searchObj,
+                $or: [
+                    { content: { $regex: search, $options: "i" } },
+                    { title: { $regex: search, $options: "i" } }
+                ]
+            };
         }
 
         if (tags) {

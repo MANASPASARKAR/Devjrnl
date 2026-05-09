@@ -7,6 +7,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import PageLoader from "../components/PageLoader";
+import useDelayedLoader from "../utils/useDelayedLoader";
 
 export default function Log() {
     const { id }   = useParams();
@@ -15,7 +17,7 @@ export default function Log() {
 
     const [log, setLog]                   = useState(null);
     const [error, setError]               = useState("");
-    const [loading, setLoading]           = useState(true);
+    const { loading, setLoading, showLoader } = useDelayedLoader();
     const [deleting, setDeleting]         = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || "");
@@ -55,11 +57,9 @@ export default function Log() {
     const formatDate = (raw) =>
         raw ? new Date(raw).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "—";
 
-    if (loading) return (
-        <div className="min-h-screen bg-[#0e0e0e] flex items-center justify-center">
-            <p className="text-[#39ff14] font-mono tracking-widest animate-pulse">// LOADING...</p>
-        </div>
-    );
+    if (loading) return showLoader
+        ? <PageLoader label="LOADING ENTRY" />
+        : <div className="min-h-screen bg-[#0e0e0e]" />;
 
     const crumbs = ["JOURNAL", ...(log?.tags?.slice(0, 2).map(t => t.toUpperCase()) ?? [])];
 

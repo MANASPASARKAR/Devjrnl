@@ -4,6 +4,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import TAGS from "../constants/tags";
 import ErrorAlert from "../components/ErrorAlert";
 import MDEditor from "@uiw/react-md-editor";
+import PageLoader from "../components/PageLoader";
+import useDelayedLoader from "../utils/useDelayedLoader";
 
 export default function EditLog() {
     const { id }   = useParams();
@@ -19,6 +21,9 @@ export default function EditLog() {
     const [existingImages, setExistingImages] = useState([]);
     const [deletedImages, setDeletedImages]   = useState([]);
     const [newImages, setNewImages]           = useState([]);
+    const { loading, setLoading, showLoader } = useDelayedLoader();
+
+    if (loading) return showLoader ? <PageLoader label="LOADING ENTRY" /> : <div className="min-h-screen bg-[#0a0a0a]" />;
 
     useEffect(() => {
         const fetchLog = async () => {
@@ -30,6 +35,8 @@ export default function EditLog() {
                 setExistingImages(response.data.images || []);
             } catch (err) {
                 setError(err.response?.data?.message || "Failed to load log.");
+            } finally {
+                setLoading(false);
             }
         };
         fetchLog();
